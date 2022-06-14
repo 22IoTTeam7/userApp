@@ -233,7 +233,7 @@ public class MainActivity extends AppCompatActivity {
 
                     switch (floor){
                         case 2:
-                            RSSI_Array = new int[34];
+                            RSSI_Array = new int[33];
                             Arrays.fill(RSSI_Array,0);
                             for(String verify_MAC : listAP){
                                 if(floor2.AP2F.contains(verify_MAC)){
@@ -243,7 +243,7 @@ public class MainActivity extends AppCompatActivity {
                             manager.callFloor2(RSSI_Array);
                             break;
                         case 4:
-                            RSSI_Array = new int[45];
+                            RSSI_Array = new int[44];
                             Arrays.fill(RSSI_Array,0);
                             for(String verify_MAC : listAP){
                                 if(floor4.AP4F.contains(verify_MAC)){
@@ -253,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
                             manager.callFloor4(RSSI_Array);
                             break;
                         case 5:
-                            RSSI_Array = new int[50];
+                            RSSI_Array = new int[49];
                             Arrays.fill(RSSI_Array,0);
                             for(String verify_MAC : listAP){
                                 if(floor5.AP5F.contains(verify_MAC)){
