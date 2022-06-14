@@ -62,6 +62,12 @@ public class MainActivity extends AppCompatActivity {
     Button Locatebtn;
     TextView LocateTxt;
 
+    int counter = 0;
+    int[] loca_code = new int[3];
+    int result_code = 0;
+    //TODO 받은 결과
+
+
     CheckFloor checkFloor;
 
     Floor2List floor2 = new Floor2List();
@@ -87,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
 
         Locatebtn = findViewById(R.id.LocateButton);
         LocateTxt = findViewById(R.id.LocateText);
-
+        Arrays.fill(loca_code,0);
         //HTTP 통신 Manager
         manager = new callRetrofit();
 
@@ -133,11 +139,11 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    int counter = 0;
+
 
     //TODO ===== [와이파이 스캔 시작 실시] =====
     public void WifiScanStart(){
-        Log.d("","\n"+"[A_WifiScan > WifiScanStart() 메소드 : 실시간 와이파이 스캐닝 시작]");
+        Log.d("","\n"+"[A_WifiScan > WifiScanStart() 메소드 : 실시간 와이파이 스캐닝 시작- "+(counter+1)+"번째]");
         try {
             //TODO [와이파이 스캔 시작 플래그 설정]
             wifiStartFlag = true;
@@ -159,20 +165,13 @@ public class MainActivity extends AppCompatActivity {
                     WifiScanStop();
                     //TODO : 버튼을 한번 누르면 3번의 스캔을 진행 : 스캔을 끄기 위해서 버튼을 한번 더 누르는 과정이 없어야 합니다. -> 버튼을 누르고 결과를 받고 다시 버튼을 누르면 또 스캔을 할 수 있게 구현 부탁드립니다.
                     //TODO : WiFi 스캔 -> 서버에 보내서 결과 받고 X 3
-//                    isScanning = false;
-//                    if(counter<3){
-//                        counter++;
-//                        WifiScanStart();
-//                    }else{
-//                        WifiScanStop();
-//                    }
                 }
                 catch (Exception e){
                     e.printStackTrace();
                 }
             }
             else {
-                Log.d("","\n"+"[A_WifiScan > WifiScanStart() 메소드 : 실시간 와이파이 스캐닝 진행 중인 상태]");
+                Log.d("","\n"+"[A_WifiScan > WifiScanStart() 메소드 : 실시간 와이파이 스캐닝 진행 중인 상태 - "+(counter+1)+"번째]");
             }
         }
         catch (Exception e){
@@ -227,7 +226,8 @@ public class MainActivity extends AppCompatActivity {
                             j++;
                         }
                     }
-                    Log.d("확인","\n"+"[실시간 와이파이 스캐닝 목록 확인 성공: 목록 매핑 시작]");
+                    Log.d("확인","\n"+"[실시간 와이파이 스캐닝 목록 확인 성공: 목록 매핑 시작 - "+(counter+1)+"번째");
+
                     //일단 임시로 조치해두었습니다. 수요일 테스트할때 제가 바꿔서 테스트 할게요
                     //int floor = checkFloor.getFloor(listAP);
                     int floor = 5;
@@ -270,14 +270,11 @@ public class MainActivity extends AppCompatActivity {
                 Log.d("---","---");
                 WifiScanStop();
 
-                //TODO [받아온 result 표시(변환 x)]
-                int loca_code = resultReceived.getPredict();
-                //인자를 받아오지 못했을 경우 6000이상의 값 들어오게 될 듯,, 한데,, exception 처리,,
-                if(loca_code<6000){
-                    LocateTxt.setText(Integer.toString(loca_code));
-                }else{
-                    LocateTxt.setText("nothing");
-                }
+                //받은 결과를 loca_code arr에 저장 (총 3개)
+                loca_code[counter] = resultReceived.getPredict();
+
+                Log.d("","\n"+resultReceived.getResult());
+                Log.d("","\n"+resultReceived.getPredict());
 
             }
             catch (Exception e){
@@ -288,14 +285,71 @@ public class MainActivity extends AppCompatActivity {
 
     //TODO ===== [와이파이 스캔 종료 실시] =====
     public void WifiScanStop(){
-        Log.d("","\n"+"[A_WifiScan > WifiScanStop() 메소드 : 실시간 와이파이 스캐닝 종료]");
+        Log.d("","\n"+"[A_WifiScan > WifiScanStop() 메소드 : 실시간 와이파이 스캐닝 종료- "+(counter+1)+"번째]");
         try {
             //TODO [실시간 와이파이 목록 스캔 플래그값 초기화]
             wifiStartFlag = false;
-
+            isScanning = false;
             //TODO [등록한 리시버 해제 실시]
             if(wifiScanReceiver != null){
                 unregisterReceiver(wifiScanReceiver);
+            }
+            //세번까지 돌려보자
+            if(counter<2){
+                counter++;
+                WifiScanStart();
+            }else{
+
+                //TODO : 3번의 결과 중 가장 많은 결과를 UI에 프린트
+                //세 결과가 다 다들 경우
+                if(loca_code[0] != loca_code[1] && loca_code[0] != loca_code[2] && loca_code[1] != loca_code[2]){
+                    result_code = loca_code[2];
+                }
+                //세 결과 중 0,1 같거나 1,2같거나 0,1,2 다 같거나
+                else if(loca_code[0] == loca_code[1] || loca_code[1] == loca_code[2]){
+                    result_code = loca_code[1];
+                }
+                // 0,2만 같을 경우
+                else if(loca_code[0] == loca_code[2]){
+                    result_code = loca_code[0];
+                }
+                //TODO [받아온 result 표시]
+                /*  각 호신 번호끝에 1이 붙은 숫자는 그 호실 앞 복도입니다. 예) 2011 -> 201호 앞 복도
+                 *  특수 위치 매핑은 다음과 같습니다.
+                 *     1. 2층
+                 *         운동장쪽 엘리베이터 → 232
+                 *         중앙 엘리베이터 → 233
+                 *         복정동쪽 엘리베이터 → 234
+                 *         복정동쪽 빈공간 → 231
+                 *     2. 4층
+                 *         운동장쪽 엘리베이터 → 440
+                 *         중앙 엘리베이터 → 437
+                 *         복정동쪽 엘리베이터 → 438
+                 *         운동장쪽 엘리베이터 복도 → 439
+                 *         복정동쪽 빈공간 → 436
+                 *         407A -> 4072
+                 *     3. 5층
+                 *         운동장쪽 엘리베이터 → 535
+                 *         중앙 엘리베이터 → 536
+                 *         복정동쪽 엘리베이터 → 537
+                 *         운동장쪽 엘리베이터 복도 → 538
+                 *         복정동 쪽 빈공간 → 533
+                 *         큐브 → 534
+                 *         507A -> 5072
+                 * */
+                if(result_code > 2000) {
+                    if (result_code == 4072 || result_code == 5072) {
+                        LocateTxt.setText("현재 위치는"+ Integer.toString(result_code / 10) + "A 입니다");
+                    } else {
+                        LocateTxt.setText("현재 위치는"+Integer.toString(result_code / 10) + "호 앞 복도입니다");
+                    }
+                }else if(result_code > 200 && result_code < 600){
+                    LocateTxt.setText("현재 위치는"+Integer.toString(result_code) + "호 입니다");
+                }else{
+                    LocateTxt.setText("오류: 스캔을 다시 해주세요");
+                }
+                //카운터 초기화
+                counter = 0;
             }
         }
         catch (Exception e){
@@ -303,5 +357,4 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    //TODO : 3번의 결과 중 가장 많은 결과를 UI에 프린트
 }
