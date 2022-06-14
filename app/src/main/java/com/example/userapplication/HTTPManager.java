@@ -9,7 +9,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
  * */
 
 public class HTTPManager {
-    private static final String BASE_URL = "https://ljhhosting.com/";
+    private static final String BASE_URL = "https://www.ljhhosting.com/";
 
     public static RetrofitAPI getApiService(){return getInstance().create(RetrofitAPI.class);}
 
