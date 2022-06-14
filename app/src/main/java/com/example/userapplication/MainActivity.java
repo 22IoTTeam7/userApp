@@ -1,10 +1,31 @@
 package com.example.userapplication;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+
 import android.widget.Button;
+
 import android.widget.TextView;
+import android.widget.Toast;
+
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+
 /**
  * 0. 버튼을 누르고 난 후 아래의 순서로 로직이 돌아가야 합니다.
  * 1. WiFi 스캔을 진행해서 주변의 GC_free_WiFi들의 MAC주소를 가져옵니다.
@@ -41,6 +62,24 @@ public class MainActivity extends AppCompatActivity {
     Button Locatebtn;
     TextView LocateTxt;
 
+    CheckFloor checkFloor;
+
+
+    Floor2List floor2 = new Floor2List();
+    Floor4List floor4 = new Floor4List();
+    Floor5List floor5 = new Floor5List();
+
+    int[] RSSI_Array;
+    List<ScanResult> wifiList = new ArrayList();
+    ArrayList wifiFormatList = new ArrayList();
+    callRetrofit manager;
+    WifiManager wifiManager;
+    IntentFilter intentFilter = new IntentFilter();
+    ArrayList<String> listAP = new ArrayList<>();
+
+    boolean isScanning = false;
+    boolean wifiStartFlag = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,6 +87,199 @@ public class MainActivity extends AppCompatActivity {
 
         Locatebtn = findViewById(R.id.LocateButton);
         LocateTxt = findViewById(R.id.LocateText);
+
+        //HTTP 통신 Manager
+        manager = new callRetrofit();
+
+        //권한 요청
+        ActivityCompat.requestPermissions(com.example.userapplication.MainActivity.this,
+                new String[]{Manifest.permission.ACCESS_WIFI_STATE,
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_WIFI_STATE,
+                        Manifest.permission.CHANGE_WIFI_STATE,
+                        Manifest.permission.ACCESS_NETWORK_STATE,
+                        Manifest.permission.CHANGE_WIFI_STATE,
+                        Manifest.permission.READ_PHONE_STATE,
+                        Manifest.permission.CHANGE_NETWORK_STATE,
+                        Manifest.permission. ACCESS_COARSE_LOCATION},
+                1000);
+
+        //버튼 눌렀을 때 스켄 시작
+        Locatebtn.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+
+                if(!isScanning) {
+                    Toast.makeText(com.example.userapplication.MainActivity.this, "Scan On", Toast.LENGTH_SHORT).show();
+                    isScanning = true;
+                    try {
+                        if(wifiStartFlag == true){
+                            //TODO [와이파이 스캔이 실행 중인 경우]
+                            Log.d("","\n"+"[A_WifiScan > 실시간 와이파이 스캐닝이 이미 동작 중입니다 ...]");
+                        }
+                        else {
+                            //TODO [와이파이 스캔 시작]
+                            WifiScanStart();
+                        }
+                    }
+                    catch (Exception e){
+                        e.printStackTrace();
+                    }
+                } else{
+                    Toast.makeText(com.example.userapplication.MainActivity.this, "Scan Off", Toast.LENGTH_SHORT).show();
+                    isScanning = false;
+                }
+            }
+        });
+    }
+    //TODO ===== [와이파이 스캔 시작 실시] =====
+    public void WifiScanStart(){
+        Log.d("","\n"+"[A_WifiScan > WifiScanStart() 메소드 : 실시간 와이파이 스캐닝 시작]");
+        try {
+            //TODO [와이파이 스캔 시작 플래그 설정]
+            wifiStartFlag = true;
+
+            //TODO [Wifi Scan 관련 객체 선언]
+            wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+
+            registerReceiver(wifiScanReceiver, intentFilter); //TODO 리시버 시작
+
+            //TODO [와이파이 스캔 상태 확인]
+            boolean success = wifiManager.startScan();
+
+            if(!success) {
+                Log.d("","\n"+"[A_WifiScan > WifiScanStart() 메소드 : 실시간 와이파이 스캐닝 시작 할 수없는 상태]");
+                Log.d("","\n"+"[로직 : 와이파이 스캔 기능이 정지 상태입니다. 와이파이 설정에서 비활성 후 다시 활성 필요]");
+
+                try {
+                    //TODO 실시간 와이파이 스캐닝 종료
+                    WifiScanStop();
+                    isScanning = false;
+                }
+                catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+            else {
+                Log.d("","\n"+"[A_WifiScan > WifiScanStart() 메소드 : 실시간 와이파이 스캐닝 진행 중인 상태]");
+            }
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context c, Intent intent) {
+            //TODO wifiManager.startScan(); 시 발동되는 메소드 (실시간 와이파이 목록 감지)
+            try {
+                //TODO [스캔 성공 여부 값 반환]
+                boolean success = intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false);
+
+                //TODO [실시간 와이파이 목록 스캔 성공한 경우]
+                if (success) {
+                    //TODO [기존에 저장된 리스트 초기화 실시]
+                    if(wifiList != null){
+                        if (wifiList.size() > 0){
+                            wifiList.clear();
+                        }
+                    }
+                    else {
+                        wifiList = new ArrayList();
+                    }
+                    if(wifiFormatList != null){
+                        if (wifiFormatList.size() > 0){
+                            wifiFormatList.clear();
+                        }
+                    }
+                    else {
+                        wifiFormatList = new ArrayList();
+                    }
+
+                    //TODO [실시간 스캔된 와이파이 리스트 결과 얻어옴]
+                    wifiList = wifiManager.getScanResults();
+                    String ssid_format = "";
+                    String mac_format = "";
+
+                    int[] level_format = new int[50];
+                    int j = 0;
+                    //TODO [for 반복문을 수행하면서 데이터 확인 실시]
+                    for(int i=0; i<wifiList.size(); i++){
+                        ssid_format = wifiList.get(i).SSID;
+                        //TODO SSID 값 바꿔주기! - 완료
+                        //[SSID 값 확인] - Gachon Free WiFi 만 받도록!
+                        if(ssid_format.equals("GC_free_WiFi")){
+                            mac_format = wifiList.get(i).BSSID.trim();
+                            mac_format = mac_format.substring(9);
+                            //TODO [MAC 값 확인] - 해당 인덱스에 RSSI 값 기록
+                            level_format[j] = Integer.valueOf(wifiList.get(i).level);
+                            listAP.set(j, mac_format);
+                            j++;
+                        }
+                    }
+                    int floor = checkFloor.getFloor(listAP);
+
+                    switch (floor){
+                        case 2:
+                            RSSI_Array = new int[34];
+                            Arrays.fill(RSSI_Array,0);
+                            for(String verify_MAC : listAP){
+                                if(floor2.AP2F.contains(verify_MAC)){
+                                    RSSI_Array[floor2.AP2F.indexOf(verify_MAC)] = level_format[listAP.indexOf(verify_MAC)];
+                                }
+                            }
+                            manager.callFloor2(RSSI_Array);
+                            break;
+                        case 4:
+                            RSSI_Array = new int[45];
+                            Arrays.fill(RSSI_Array,0);
+                            for(String verify_MAC : listAP){
+                                if(floor4.AP4F.contains(verify_MAC)){
+                                    RSSI_Array[floor4.AP4F.indexOf(verify_MAC)] = level_format[listAP.indexOf(verify_MAC)];
+                                }
+                            }
+                            manager.callFloor4(RSSI_Array);
+                            break;
+                        case 5:
+                            RSSI_Array = new int[50];
+                            Arrays.fill(RSSI_Array,0);
+                            for(String verify_MAC : listAP){
+                                if(floor5.AP5F.contains(verify_MAC)){
+                                    RSSI_Array[floor5.AP5F.indexOf(verify_MAC)] = level_format[listAP.indexOf(verify_MAC)];
+                                }
+                            }
+                            manager.callFloor5(RSSI_Array);
+                            break;
+                    }
+                    //TODO [실시간 와이파이 스캐닝 종료]
+                } else {
+                    Log.d("","\n"+"[A_WifiScan > onReceive() 메소드 : 실시간 와이파이 스캐닝 목록 확인 실패]");
+                }
+                Log.d("---","---");
+                WifiScanStop();
+            }
+            catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+    };
+
+    //TODO ===== [와이파이 스캔 종료 실시] =====
+    public void WifiScanStop(){
+        Log.d("","\n"+"[A_WifiScan > WifiScanStop() 메소드 : 실시간 와이파이 스캐닝 종료]");
+        try {
+            //TODO [실시간 와이파이 목록 스캔 플래그값 초기화]
+            wifiStartFlag = false;
+
+            //TODO [등록한 리시버 해제 실시]
+            if(wifiScanReceiver != null){
+                unregisterReceiver(wifiScanReceiver);
+            }
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
     }
     //TODO : 버튼을 한번 누르면 3번의 스캔을 진행 : 스캔을 끄기 위해서 버튼을 한번 더 누르는 과정이 없어야 합니다. -> 버튼을 누르고 결과를 받고 다시 버튼을 누르면 또 스캔을 할 수 있게 구현 부탁드립니다.
     //TODO : WiFi 스캔 -> 서버에 보내서 결과 받고 X 3
