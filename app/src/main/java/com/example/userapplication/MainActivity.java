@@ -64,7 +64,6 @@ public class MainActivity extends AppCompatActivity {
 
     CheckFloor checkFloor;
 
-
     Floor2List floor2 = new Floor2List();
     Floor4List floor4 = new Floor4List();
     Floor5List floor5 = new Floor5List();
@@ -229,8 +228,9 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                     Log.d("확인","\n"+"[실시간 와이파이 스캐닝 목록 확인 성공: 목록 매핑 시작]");
-                    int floor = checkFloor.getFloor(listAP);
-
+                    //일단 임시로 조치해두었습니다. 수요일 테스트할때 제가 바꿔서 테스트 할게요
+                    //int floor = checkFloor.getFloor(listAP);
+                    int floor = 5;
                     switch (floor){
                         case 2:
                             RSSI_Array = new int[33];
