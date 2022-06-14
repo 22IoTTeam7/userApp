@@ -76,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
     WifiManager wifiManager;
     IntentFilter intentFilter = new IntentFilter();
     ArrayList<String> listAP = new ArrayList<>();
+    APIRes resultReceived = new APIRes();
 
     boolean isScanning = false;
     boolean wifiStartFlag = false;
@@ -132,13 +133,15 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    int counter = 0;
+
     //TODO ===== [와이파이 스캔 시작 실시] =====
     public void WifiScanStart(){
         Log.d("","\n"+"[A_WifiScan > WifiScanStart() 메소드 : 실시간 와이파이 스캐닝 시작]");
         try {
             //TODO [와이파이 스캔 시작 플래그 설정]
             wifiStartFlag = true;
-
             //TODO [Wifi Scan 관련 객체 선언]
             wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
             intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
@@ -155,7 +158,15 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     //TODO 실시간 와이파이 스캐닝 종료
                     WifiScanStop();
-                    isScanning = false;
+                    //TODO : 버튼을 한번 누르면 3번의 스캔을 진행 : 스캔을 끄기 위해서 버튼을 한번 더 누르는 과정이 없어야 합니다. -> 버튼을 누르고 결과를 받고 다시 버튼을 누르면 또 스캔을 할 수 있게 구현 부탁드립니다.
+                    //TODO : WiFi 스캔 -> 서버에 보내서 결과 받고 X 3
+//                    isScanning = false;
+//                    if(counter<3){
+//                        counter++;
+//                        WifiScanStart();
+//                    }else{
+//                        WifiScanStop();
+//                    }
                 }
                 catch (Exception e){
                     e.printStackTrace();
@@ -176,7 +187,6 @@ public class MainActivity extends AppCompatActivity {
             try {
                 //TODO [스캔 성공 여부 값 반환]
                 boolean success = intent.getBooleanExtra(WifiManager.EXTRA_RESULTS_UPDATED, false);
-
                 //TODO [실시간 와이파이 목록 스캔 성공한 경우]
                 if (success) {
                     //TODO [기존에 저장된 리스트 초기화 실시]
@@ -218,6 +228,7 @@ public class MainActivity extends AppCompatActivity {
                             j++;
                         }
                     }
+                    Log.d("확인","\n"+"[실시간 와이파이 스캐닝 목록 확인 성공: 목록 매핑 시작]");
                     int floor = checkFloor.getFloor(listAP);
 
                     switch (floor){
@@ -258,6 +269,16 @@ public class MainActivity extends AppCompatActivity {
                 }
                 Log.d("---","---");
                 WifiScanStop();
+
+                //TODO [받아온 result 표시(변환 x)]
+                int loca_code = resultReceived.getPredict();
+                //인자를 받아오지 못했을 경우 6000이상의 값 들어오게 될 듯,, 한데,, exception 처리,,
+                if(loca_code<6000){
+                    LocateTxt.setText(Integer.toString(loca_code));
+                }else{
+                    LocateTxt.setText("nothing");
+                }
+
             }
             catch (Exception e){
                 e.printStackTrace();
@@ -281,7 +302,6 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
     }
-    //TODO : 버튼을 한번 누르면 3번의 스캔을 진행 : 스캔을 끄기 위해서 버튼을 한번 더 누르는 과정이 없어야 합니다. -> 버튼을 누르고 결과를 받고 다시 버튼을 누르면 또 스캔을 할 수 있게 구현 부탁드립니다.
-    //TODO : WiFi 스캔 -> 서버에 보내서 결과 받고 X 3
+
     //TODO : 3번의 결과 중 가장 많은 결과를 UI에 프린트
 }
