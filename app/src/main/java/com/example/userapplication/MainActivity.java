@@ -312,31 +312,8 @@ public class MainActivity extends AppCompatActivity {
                 else if(loca_code[0] == loca_code[2]){
                     result_code = loca_code[0];
                 }
-                //TODO [받아온 result 표시]
-                /*  각 호신 번호끝에 1이 붙은 숫자는 그 호실 앞 복도입니다. 예) 2011 -> 201호 앞 복도
-                 *  특수 위치 매핑은 다음과 같습니다.
-                 *     1. 2층
-                 *         운동장쪽 엘리베이터 → 232
-                 *         중앙 엘리베이터 → 233
-                 *         복정동쪽 엘리베이터 → 234
-                 *         복정동쪽 빈공간 → 231
-                 *     2. 4층
-                 *         운동장쪽 엘리베이터 → 440
-                 *         중앙 엘리베이터 → 437
-                 *         복정동쪽 엘리베이터 → 438
-                 *         운동장쪽 엘리베이터 복도 → 439
-                 *         복정동쪽 빈공간 → 436
-                 *         407A -> 4072
-                 *     3. 5층
-                 *         운동장쪽 엘리베이터 → 535
-                 *         중앙 엘리베이터 → 536
-                 *         복정동쪽 엘리베이터 → 537
-                 *         운동장쪽 엘리베이터 복도 → 538
-                 *         복정동 쪽 빈공간 → 533
-                 *         큐브 → 534
-                 *         507A -> 5072
-                 * */
 
+                //결과 표시 구
                 if(result_code > 2000) {
                     if (result_code == 4072 || result_code == 5072) {
                         LocateTxt.setText("현재 위치는"+ Integer.toString(result_code / 10) + "A 입니다");
@@ -344,7 +321,56 @@ public class MainActivity extends AppCompatActivity {
                         LocateTxt.setText("현재 위치는"+Integer.toString(result_code / 10) + "호 앞 복도입니다");
                     }
                 }else if(result_code > 200 && result_code < 600){
-                    LocateTxt.setText("현재 위치는"+Integer.toString(result_code) + "호 입니다");
+                    switch (result_code){
+                        case 232:
+                            LocateTxt.setText("현재 위치는 2층 운동장쪽 엘리베이터 입니다.");
+                            break;
+                        case 233:
+                            LocateTxt.setText("현재 위치는 2층 중앙 엘리베이터 입니다.");
+                            break;
+                        case 234:
+                            LocateTxt.setText("현재 위치는 2층 복정동쪽 엘리베이터 입니다.");
+                            break;
+                        case 231:
+                            LocateTxt.setText("현재 위치는 2층 복정동쪽 빈공간 입니다.");
+                            break;
+                        case 440:
+                            LocateTxt.setText("현재 위치는 4층 운동장쪽 엘리베이터 입니다.");
+                            break;
+                        case 437:
+                            LocateTxt.setText("현재 위치는 4층 중앙 엘리베이터 입니다.");
+                            break;
+                        case 438:
+                            LocateTxt.setText("현재 위치는 4층 복정동쪽 엘리베이터 입니다.");
+                            break;
+                        case 439:
+                            LocateTxt.setText("현재 위치는 4층 운동장쪽 엘리베이터 복도입니다.");
+                            break;
+                        case 436:
+                            LocateTxt.setText("현재 위치는 4층 복정동쪽 빈공간 입니다.");
+                            break;
+                        case 535:
+                            LocateTxt.setText("현재 위치는 5층 운동장쪽 엘리베이터 입니다.");
+                            break;
+                        case 536:
+                            LocateTxt.setText("현재 위치는 5층 중앙 엘리베이터 입니다.");
+                            break;
+                        case 537:
+                            LocateTxt.setText("현재 위치는 5층 복정동쪽 엘리베이터 입니다.");
+                            break;
+                        case 538:
+                            LocateTxt.setText("현재 위치는 5층 운동장쪽 엘리베이터 복도입니다.");
+                            break;
+                        case 533:
+                            LocateTxt.setText("현재 위치는 5층 복정동쪽 빈공간 입니다.");
+                            break;
+                        case 534:
+                            LocateTxt.setText("현재 위치는 5층 큐브 입니다.");
+                            break;
+                        default:
+                            LocateTxt.setText("현재 위치는"+Integer.toString(result_code) + "호 입니다");
+                            break;
+                    }
                 }else{
                     LocateTxt.setText("오류: 스캔을 다시 해주세요");
                 }
