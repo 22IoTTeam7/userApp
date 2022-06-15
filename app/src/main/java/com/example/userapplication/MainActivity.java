@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
     //TODO 받은 결과
 
 
-    CheckFloor checkFloor;
+    CheckFloor checkFloor = new CheckFloor();
 
     Floor2List floor2 = new Floor2List();
     Floor4List floor4 = new Floor4List();
@@ -80,8 +80,6 @@ public class MainActivity extends AppCompatActivity {
     callRetrofit manager;
     WifiManager wifiManager;
     IntentFilter intentFilter = new IntentFilter();
-    ArrayList<String> listAP = new ArrayList<>();
-    APIRes resultReceived = new APIRes();
 
     boolean isScanning = false;
     boolean wifiStartFlag = false;
@@ -181,6 +179,7 @@ public class MainActivity extends AppCompatActivity {
     BroadcastReceiver wifiScanReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context c, Intent intent) {
+            ArrayList<String> listAP = new ArrayList<>();
             //TODO wifiManager.startScan(); 시 발동되는 메소드 (실시간 와이파이 목록 감지)
             try {
                 //TODO [스캔 성공 여부 값 반환]
@@ -222,15 +221,16 @@ public class MainActivity extends AppCompatActivity {
                             mac_format = mac_format.substring(9);
                             //TODO [MAC 값 확인] - 해당 인덱스에 RSSI 값 기록
                             level_format[j] = Integer.valueOf(wifiList.get(i).level);
-                            listAP.set(j, mac_format);
+                            listAP.add(j, mac_format);
                             j++;
                         }
                     }
                     Log.d("확인","\n"+"[실시간 와이파이 스캐닝 목록 확인 성공: 목록 매핑 시작 - "+(counter+1)+"번째");
 
                     //일단 임시로 조치해두었습니다. 수요일 테스트할때 제가 바꿔서 테스트 할게요
-                    //int floor = checkFloor.getFloor(listAP);
-                    int floor = 5;
+                    int floor = checkFloor.getFloor(listAP);
+                    Log.d("Test", Integer.toString(floor));
+
                     switch (floor){
                         case 2:
                             RSSI_Array = new int[33];
@@ -240,7 +240,9 @@ public class MainActivity extends AppCompatActivity {
                                     RSSI_Array[floor2.AP2F.indexOf(verify_MAC)] = level_format[listAP.indexOf(verify_MAC)];
                                 }
                             }
-                            manager.callFloor2(RSSI_Array);
+
+                            loca_code[counter] = manager.callFloor2(RSSI_Array);
+                            Log.d("Test", Integer.toString(loca_code[counter]));
                             break;
                         case 4:
                             RSSI_Array = new int[44];
@@ -250,7 +252,8 @@ public class MainActivity extends AppCompatActivity {
                                     RSSI_Array[floor4.AP4F.indexOf(verify_MAC)] = level_format[listAP.indexOf(verify_MAC)];
                                 }
                             }
-                            manager.callFloor4(RSSI_Array);
+                            loca_code[counter] = manager.callFloor4(RSSI_Array);
+                            Log.d("Test", Integer.toString(loca_code[counter]));
                             break;
                         case 5:
                             RSSI_Array = new int[49];
@@ -260,7 +263,8 @@ public class MainActivity extends AppCompatActivity {
                                     RSSI_Array[floor5.AP5F.indexOf(verify_MAC)] = level_format[listAP.indexOf(verify_MAC)];
                                 }
                             }
-                            manager.callFloor5(RSSI_Array);
+                            loca_code[counter] = manager.callFloor5(RSSI_Array);
+                            Log.d("Test", Integer.toString(loca_code[counter]));
                             break;
                     }
                     //TODO [실시간 와이파이 스캐닝 종료]
@@ -271,11 +275,6 @@ public class MainActivity extends AppCompatActivity {
                 WifiScanStop();
 
                 //받은 결과를 loca_code arr에 저장 (총 3개)
-                loca_code[counter] = resultReceived.getPredict();
-
-                Log.d("","\n"+resultReceived.getResult());
-                Log.d("","\n"+resultReceived.getPredict());
-
             }
             catch (Exception e){
                 e.printStackTrace();
@@ -337,6 +336,7 @@ public class MainActivity extends AppCompatActivity {
                  *         큐브 → 534
                  *         507A -> 5072
                  * */
+
                 if(result_code > 2000) {
                     if (result_code == 4072 || result_code == 5072) {
                         LocateTxt.setText("현재 위치는"+ Integer.toString(result_code / 10) + "A 입니다");
